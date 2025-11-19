@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>App mínima Mongo + Backend + Front</title>
+</head>
+
+<body>
+    <h1>Listado de items</h1>
+
+    <form id="form">
+        <input type="text" id="texto" placeholder="Nuevo item..." required />
+        <button type="submit">Añadir</button>
+    </form>
+
+    <ul id="lista"></ul>
+
+    <script>
+        // IMPORTANTE:
+        // El backend estará mapeado al puerto 4000 del host
+        const API_BASE = 'http://localhost:4000';
+
+        const lista = document.getElementById('lista');
+        const form = document.getElementById('form');
+        const input = document.getElementById('texto');
+
+        async function cargarItems() {
+            lista.innerHTML = 'Cargando...';
+            try {
+                const res = await fetch(API_BASE + '/items');
+                const data = await res.json();
+                lista.innerHTML = '';
+                data.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = item.texto + ' ';
+
+                    const btn = document.createElement('button');
+                    btn.textContent = 'Eliminar';
+                    btn.onclick = async () => {
+                        await fetch(API_BASE + '/items/' + item._id, { method: 'DELETE' });
+                        cargarItems();
+                    };
+
+                    li.appendChild(btn);
+                    lista.appendChild(li);
+                });
+            } catch (err) {
+                console.error(err);
+                lista.innerHTML = 'Error cargando items';
+            }
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const texto = input.value.trim();
+            if (!texto) return;
+
+            await fetch(API_BASE + '/items', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ texto })
+            });
+
+            input.value = '';
+            cargarItems();
+        });
+
+        cargarItems();
+    </script>
+</body>
+
+</html>
